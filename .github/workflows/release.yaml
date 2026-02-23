@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
 
     steps:
       - name: Checkout repository
@@ -25,11 +25,18 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore LocaleEmulator.sln
 
+      - name: Extract dependencies
+        run: |
+          7z x Locale-Emulator-Core\_WDK\_WDK.7z -oLocale-Emulator-Core\_WDK
+          7z x Locale-Emulator-Core\_Libs\_Libs.7z -oLocale-Emulator-Core\_Libs
+          7z x Locale-Emulator-Core\_Compilers\_Compilers.7z -oLocale-Emulator-Core\_Compilers
+        shell: pwsh
+
       - name: Build Core (LocaleEmulator)
-        run: msbuild Locale-Emulator-Core\LocaleEmulator\LocaleEmulator.vcxproj /p:Configuration=Release /p:Platform=Win32 /p:WindowsTargetPlatformVersion=10.0 /p:PlatformToolset=v143
+        run: msbuild Locale-Emulator-Core\LocaleEmulator\LocaleEmulator.vcxproj /p:Configuration=Release /p:Platform=Win32
 
       - name: Build Core (LoaderDll)
-        run: msbuild Locale-Emulator-Core\LoaderDll\LoaderDll.vcxproj /p:Configuration=Release /p:Platform=Win32 /p:WindowsTargetPlatformVersion=10.0 /p:PlatformToolset=v143
+        run: msbuild Locale-Emulator-Core\LoaderDll\LoaderDll.vcxproj /p:Configuration=Release /p:Platform=Win32
 
       - name: Build LECommonLibrary
         run: msbuild LECommonLibrary\LECommonLibrary.csproj /p:Configuration=Release /p:Platform=AnyCPU
