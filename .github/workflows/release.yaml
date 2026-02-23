@@ -1,0 +1,60 @@
+name: Build and Release CLI
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v1
+
+      - name: Restore NuGet packages
+        run: nuget restore LocaleEmulator.sln
+
+      - name: Build Core (LocaleEmulator)
+        run: msbuild Locale-Emulator-Core\LocaleEmulator\LocaleEmulator.vcxproj /p:Configuration=Release /p:Platform=Win32
+
+      - name: Build Core (LoaderDll)
+        run: msbuild Locale-Emulator-Core\LoaderDll\LoaderDll.vcxproj /p:Configuration=Release /p:Platform=Win32
+
+      - name: Build LECommonLibrary
+        run: msbuild LECommonLibrary\LECommonLibrary.csproj /p:Configuration=Release /p:Platform=AnyCPU
+
+      - name: Build LEProc
+        run: msbuild LEProc\LEProc.csproj /p:Configuration=Release /p:Platform=x86
+
+      - name: Prepare Release Package
+        run: |
+          mkdir release
+          copy Build\Release\LEProc.exe release\
+          copy LECommonLibrary\bin\Release\LECommonLibrary.dll release\
+          copy Locale-Emulator-Core\LocaleEmulator\Release\LocaleEmulator.dll release\
+          copy Locale-Emulator-Core\LoaderDll\Release\LoaderDll.dll release\
+        shell: pwsh
+
+      - name: Create Release Zip
+        run: Compress-Archive -Path release\* -DestinationPath Locale-Emulator-CLI.zip
+        shell: pwsh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Locale-Emulator-CLI.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
