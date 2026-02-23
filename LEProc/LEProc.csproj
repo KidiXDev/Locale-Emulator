@@ -91,6 +91,10 @@
     </Compile>
     <None Include="app.manifest" />
     <None Include="key.snk" />
+    <None Include="Resources\LECommonLibrary.dll" />
+    <EmbeddedResource Include="Resources\LECommonLibrary.dll">
+      <LogicalName>LECommonLibrary.dll</LogicalName>
+    </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
