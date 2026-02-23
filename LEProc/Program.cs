@@ -109,6 +109,8 @@ namespace LEProc
                     "\t-runas guid path [args]\r\n" +
                     "\t-manage path\r\n" +
                     "\t-global\r\n" +
+                    "\t-admin path\r\n" +
+                    "\t-admin -run path [args]\r\n" +
                     "\r\n" +
                     "path\tFull path of the target application.\r\n" +
                     "guid\tGuid of the target profile (in LEConfig.xml).\r\n" +
@@ -122,6 +124,7 @@ namespace LEProc
                     "-runas\tRun an application with a global profile of specific Guid.\r\n" +
                     "-manage\tModify the profile of one application.\r\n" +
                     "-global\tOpen Global Profile Manager.\r\n" +
+                    "-admin\tForce running the application as administrator.\r\n" +
                     "\r\n" +
                     "\r\n" +
                     "You can press CTRL+C to copy this message to your clipboard.\r\n",
@@ -137,16 +140,22 @@ namespace LEProc
             {
                 Args = args;
 
-                switch (Args[0])
+                var forceAdmin = Args[0] == "-admin";
+                var offset = forceAdmin ? 1 : 0;
+
+                if (Args.Length <= offset)
+                    return;
+
+                switch (Args[offset])
                 {
-                    case "-run": //-run %APP%
-                        RunWithIndependentProfile(Args[1]);
+                    case "-run": //-run %APP% or -admin -run %APP%
+                        RunWithIndependentProfile(Args[offset + 1], forceAdmin);
                         break;
 
                     case "-manage": //-manage %APP%
                         Process.Start(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                                 "LEGUI.exe"),
-                            $"\"{Args[1]}.le.config\"");
+                            $"\"{Args[offset + 1]}.le.config\"");
                         break;
 
                     case "-global": //-global
@@ -155,13 +164,13 @@ namespace LEProc
                         break;
 
                     case "-runas": //-runas %GUID% %APP%
-                        RunWithGlobalProfile(Args[1], Args[2]);
+                        RunWithGlobalProfile(Args[offset + 1], Args[offset + 2]);
                         break;
 
                     default:
-                        if (File.Exists(Args[0]))
+                        if (File.Exists(Args[offset]))
                         {
-                            RunWithDefaultProfile(Args[0]);
+                            RunWithDefaultProfile(Args[offset], forceAdmin);
                         }
                         break;
                 }
@@ -171,7 +180,7 @@ namespace LEProc
             }
         }
 
-        private static void RunWithDefaultProfile(string path)
+        private static void RunWithDefaultProfile(string path, bool forceAdmin = false)
         {
             path = SystemHelper.EnsureAbsolutePath(path);
 
@@ -185,7 +194,10 @@ namespace LEProc
                 ? appProfile.First()
                 : globalProfiles.Any() ? globalProfiles.First() : new LEProfile(true);
 
-            DoRunWithLEProfile(path, 1, profile);
+            if (forceAdmin)
+                profile.RunAsAdmin = true;
+
+            DoRunWithLEProfile(path, forceAdmin ? 2 : 1, profile); // args index: [-admin] path [game args...]
         }
 
         private static void RunWithGlobalProfile(string guid, string path)
@@ -199,21 +211,26 @@ namespace LEProc
             DoRunWithLEProfile(path, 3, profile);
         }
 
-        private static void RunWithIndependentProfile(string path)
+        private static void RunWithIndependentProfile(string path, bool forceAdmin = false)
         {
             path = SystemHelper.EnsureAbsolutePath(path);
 
             var conf = path + ".le.config";
 
+            LEProfile profile;
             if (!File.Exists(conf))
             {
-                DoRunWithLEProfile(path, 2, new LEProfile(true));
+                profile = new LEProfile(true);
             }
             else
             {
-                var profile = LEConfig.GetProfiles(conf)[0];
-                DoRunWithLEProfile(path, 2, profile);
+                profile = LEConfig.GetProfiles(conf)[0];
             }
+
+            if (forceAdmin)
+                profile.RunAsAdmin = true;
+
+            DoRunWithLEProfile(path, forceAdmin ? 3 : 2, profile); // args index: [-admin] -run path [game args...]
         }
 
         private static void DoRunWithLEProfile(string absPath, int argumentsStart, LEProfile profile)
