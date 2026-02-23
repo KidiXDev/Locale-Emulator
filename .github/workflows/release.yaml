@@ -3,7 +3,7 @@ name: Build and Release CLI
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
         run: msbuild LECommonLibrary\LECommonLibrary.csproj /p:Configuration=Release /p:Platform=AnyCPU
 
       - name: Build LEProc
-        run: msbuild LEProc\LEProc.csproj /p:Configuration=Release /p:Platform=x86
+        run: msbuild LEProc\LEProc.csproj /p:Configuration=Release /p:Platform=AnyCPU
 
       - name: Prepare Release Package
         run: |
