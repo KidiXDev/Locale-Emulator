@@ -207,9 +207,7 @@ namespace LEProc
 
             if (!File.Exists(conf))
             {
-                Process.Start(
-                    Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "LEGUI.exe"),
-                    $"\"{path}.le.config\"");
+                DoRunWithLEProfile(path, 2, new LEProfile(true));
             }
             else
             {
