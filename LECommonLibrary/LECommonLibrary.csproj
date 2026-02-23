@@ -74,8 +74,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y "$(TargetPath)" "$(SolutionDir)LEInstaller\Resources\"
-copy /Y "$(TargetPath)" "$(SolutionDir)LEProc\Resources\"
+    <PostBuildEvent>copy /Y "$(TargetPath)" "$(MSBuildProjectDirectory)\..\LEInstaller\Resources\"
+copy /Y "$(TargetPath)" "$(MSBuildProjectDirectory)\..\LEProc\Resources\"
     </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
