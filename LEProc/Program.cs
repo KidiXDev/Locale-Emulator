@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using LECommonLibrary;
 
@@ -18,6 +19,52 @@ namespace LEProc
         /// </summary>
         [STAThread]
         private static void Main(string[] args)
+        {
+            // Extract LECommonLibrary.dll from embedded resources if it is missing.
+            // This must happen before any code that references LECommonLibrary types
+            // so that the CLR can find the assembly when Run() is JIT-compiled.
+            EnsureCoreDlls();
+            Run(args);
+        }
+
+        private static void EnsureCoreDlls()
+        {
+            var dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            ExtractIfMissing(dir, "LECommonLibrary.dll");
+        }
+
+        private static void ExtractIfMissing(string dir, string dllName)
+        {
+            var dllPath = Path.Combine(dir, dllName);
+            if (File.Exists(dllPath))
+                return;
+
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(dllName))
+            {
+                if (stream == null)
+                    return;
+
+                using (var ms = new MemoryStream())
+                {
+                    stream.CopyTo(ms);
+                    try
+                    {
+                        File.WriteAllBytes(dllPath, ms.ToArray());
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(
+                            $"Failed to extract {dllName}:\r\n{e.Message}\r\n\r\nPlease run LEInstaller.exe first.",
+                            "Locale Emulator",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void Run(string[] args)
         {
             SystemHelper.DisableDPIScale();
 
